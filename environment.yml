@@ -1,0 +1,18 @@
+name: gsfeatloc
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - numpy=1.24.4
+  - scipy
+  - sympy
+  - matplotlib
+  - opencv
+  - scikit-learn
+  - notebook
+  - ipywidgets
+  - pip
+  - git
+  - pip:
+    - nerfbaselines
+    - superpoint_superglue_deployment
