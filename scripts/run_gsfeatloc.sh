@@ -122,7 +122,7 @@ run_dataset() {
     for seq in "${!sequences[@]}"; do
         read rot trs <<< "${sequences[$seq]}"
         run_gsfeatloc "$scene_path" "$model_path" "$output_path" "$seq" "$rot" "$trs"
-        break
+        # break
     done
 }
 
@@ -133,13 +133,13 @@ run_dataset "/home/jongwonlee/datasets/nerfbaselines/blender" \
             blender_sequences
 
 # Run for MipNeRF360 dataset
-# run_dataset "/home/jongwonlee/datasets/nerfbaselines/mipnerf360" \
-#             "/home/jongwonlee/models/gsplat/mipnerf360" \
-#             "/home/jongwonlee/output/gsfeatloc/mipnerf360" \
-#             mipnerf360_sequences
+run_dataset "/home/jongwonlee/datasets/nerfbaselines/mipnerf360" \
+            "/home/jongwonlee/models/gsplat/mipnerf360" \
+            "/home/jongwonlee/output/gsfeatloc/mipnerf360" \
+            mipnerf360_sequences
 
 # # Run for Tanks and Temples dataset
-# run_dataset "/home/jongwonlee/datasets/nerfbaselines/tanksandtemples" \
-#             "/home/jongwonlee/models/gsplat/tanksandtemples" \
-#             "/home/jongwonlee/output/gsfeatloc/tanksandtemples" \
-#             tanksandtemples_sequences
+run_dataset "/home/jongwonlee/datasets/nerfbaselines/tanksandtemples" \
+            "/home/jongwonlee/models/gsplat/tanksandtemples" \
+            "/home/jongwonlee/output/gsfeatloc/tanksandtemples" \
+            tanksandtemples_sequences
