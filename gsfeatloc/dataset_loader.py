@@ -15,75 +15,6 @@ from pathlib import Path
 import pycolmap
 
 
-def load_frame_blender(dataset: dict, index: int) -> tuple[str, np.ndarray, np.ndarray, int, int]:
-    """
-    Load a frame from the Blender dataset.
-    NOTE: This function is deprecated; use load_frames_blender instead.
-
-    Args:
-        dataset (dict): The Blender dataset loaded from JSON.
-        index (int): The index of the frame to load.
-
-    Returns:
-        tuple: A tuple containing the image path, transformation matrix, intrinsic matrix, width, and height.
-    """
-    raise Warning("This function is deprecated. Use load_frames_blender instead.")
-
-    frame = dataset["frames"][index]
-
-    # Get the filename of the image
-    filename = frame["file_path"]
-
-    # Get the pose of the camera in world coordinates
-    T_inW_ofC = np.array(frame["transform_matrix"], dtype=np.float32)
-
-    # Convert OpenGL coordinate system to OpenCV by rotating 180 degrees around the x-axis
-    T_inW_ofC[0:3, 1:3] *= -1
-
-    # Construct camera parameters for rendering
-    w = h = 800
-    fx = fy = 0.5 * w / np.tan(0.5 * float(dataset["camera_angle_x"]))
-    cx = cy = 0.5 * w
-
-    K = np.array([[fx, 0, cx], [0, fy, cy], [0, 0, 1]], dtype=np.float32)
-
-    return filename, T_inW_ofC, K, w, h
-
-
-def load_frame_colmap(recon: pycolmap.Reconstruction, index: int) -> tuple[str, np.ndarray, np.ndarray, int, int]:
-    """
-    Load a frame from a COLMAP reconstruction.
-    NOTE: This function is deprecated; use load_frames_colmap instead.
-
-    Args:
-        recon (pycolmap.Reconstruction): The COLMAP reconstruction.
-        index (int): The index of the frame to load.
-
-    Returns:
-        tuple: A tuple containing the image path, transformation matrix, intrinsic matrix, width, and height.
-    """
-    raise Warning("This function is deprecated. Use load_frames_colmap instead.")
-
-    image = recon.images[index+1]   # COLMAP uses 1-based indexing for images
-    camera = recon.cameras[image.camera.camera_id]
-
-    # Get the image filename
-    filename = image.name
-
-    # Compute the transformation matrix from world to camera coordinates
-    T_inC_ofW = np.vstack([image.cam_from_world.matrix(), [0.0, 0.0, 0.0, 1.0]])
-    T_inW_ofC = np.linalg.inv(T_inC_ofW)
-
-    # Extract camera parameters
-    w, h = camera.width, camera.height
-    fx, fy = camera.params[0], camera.params[0]
-    cx, cy = camera.params[1], camera.params[2]
-
-    K = np.array([[fx, 0, cx], [0, fy, cy], [0, 0, 1]], dtype=np.float32)
-
-    return filename, T_inW_ofC, K, w, h
-
-
 def load_frames_blender(dataset_path: str) -> tuple[np.ndarray, int, int, dict[str, np.ndarray]]:
     """
     Load all frames from the Blender dataset.
@@ -212,38 +143,6 @@ def load_frames_colmap(dataset_path: str, downscale_factor : int = 1) -> tuple[n
     
 
 if __name__ == "__main__":
-    # # Blender dataset path
-    # blender_path = Path("/home/jongwonlee/datasets/nerfbaselines/blender/lego/")
-
-    # # Load the Blender dataset
-    # with open(blender_path / "transforms_train.json", "r") as f:
-    #     test_data = json.load(f)
-
-    # # Load the first frame from the Blender dataset
-    # index = 54
-    # filename, T_inW_ofC, K, w, h = load_frame_blender(test_data, index)
-
-    # print("Blender Dataset Frame:")
-    # print(f"Filename: {filename}")
-    # print(f"Transformation Matrix (T_inW_ofC):\n{T_inW_ofC}")
-    # print(f"Intrinsic Matrix (K):\n{K}")
-    # print(f"Image Size: {w} x {h}")
-
-    # # COLMAP reconstruction path
-    # colmap_path = Path("/home/jongwonlee/models/colmap/blender/lego/sparse/0")
-    # reconstruction = pycolmap.Reconstruction(colmap_path)
-
-    # # Load the first frame from the COLMAP reconstruction
-    # index = 50
-    # filename, T_inW_ofC, K, w, h = load_frame_colmap(reconstruction, index)
-
-    # print("\nCOLMAP Reconstruction Frame:")
-    # print(f"Filename: {filename}")
-    # print(f"Transformation Matrix (T_inW_ofC):\n{T_inW_ofC}")
-    # print(f"Intrinsic Matrix (K):\n{K}")
-    # print(f"Image Size: {w} x {h}")
-
-
     # Load all frames from the Blender dataset
     blender_path = Path("/home/jongwonlee/datasets/nerfbaselines/blender/lego/transforms_train.json")
     K_blender, w_blender, h_blender, frames_blender = load_frames_blender(blender_path)

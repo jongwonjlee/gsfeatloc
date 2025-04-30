@@ -121,18 +121,6 @@ def do_feature_matching_SPSG(
     # Perform matching using SuperPoint and SuperGlue
     kp1, kp2, _, _, matches = superglue_matcher.match(im1_gray, im2_gray)
 
-    # # Filter matches using homography
-    # src_pts = np.float64([kp1[m.queryIdx].pt for m in matches]).reshape(-1, 1, 2)
-    # dst_pts = np.float64([kp2[m.trainIdx].pt for m in matches]).reshape(-1, 1, 2)
-    # M, mask = cv.findHomography(src_pts, dst_pts, method=cv.USAC_MAGSAC, ransacReprojThreshold=5.0, maxIters=10000, confidence=0.95)
-    
-    # # Filter inliers
-    # inliers = mask.ravel().astype(bool)
-    # matches = [m for m, inlier in zip(matches, inliers) if inlier]
-
-    # # Sort matches by distance
-    # matches = sorted(matches, key=lambda match: match.distance)
-
     visualize_matches(im1, im2, kp1, kp2, matches) if do_visualize else None
 
     print(f"Number of total matches (SuperPoint): {len(matches)}")
@@ -180,16 +168,8 @@ def do_feature_matching_LoFTR(
     kp1 = [cv.KeyPoint(x, y, 1) for x, y in keypoints0]
     kp2 = [cv.KeyPoint(x, y, 1) for x, y in keypoints1]
 
-    # # Establish good matches using confidence (above the mean)
-    # confidence_mean = np.mean(confidence)
-    # confidence_std = np.std(confidence)
-
-    # good_indices = np.where(confidence > confidence_mean)[0]
-    # good_matches = [matches[i] for i in good_indices]
-
-    # visualize_matches(im1, im2, kp1, kp2, good_matches) if do_visualize else None
+    visualize_matches(im1, im2, kp1, kp2, matches) if do_visualize else None
 
     print(f"Number of total matches (LoFTR): {len(matches)}")
-    # print(f"Number of good matches (LoFTR): {len(good_matches)}")
 
     return kp1, kp2, matches
