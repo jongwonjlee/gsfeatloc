@@ -22,7 +22,6 @@ The figure below shows an overview of the proposed pipeline for visual localizat
 The figure below shows (from left to right) the query image, an image rendered at a rough initial pose, an image rendered at the estimated pose, and a blended result of the query image and the rendered image at the estimated pose.
 
 <img src="docs/results_lego.png" alt="results-lego" width="800"/>
-![here](docs/results_lego.png)
 
 This is enabled by establishing 2D-2D feature correspondences between the query image and the image rendered at the initial pose, as shown below. 
 
