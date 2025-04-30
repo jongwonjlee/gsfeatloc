@@ -149,9 +149,9 @@ The images below show examples of success cases from our method on several scene
 Each triplet shows, from left to right, the query image, the image rendered at the initial pose provided by 6DGS, and the image rendered at the pose estimated by our method.
 Our method shows success cases despite drastic appearance differences between the query and the rendered image.
 
-<img src="docs/synthetic-nerf.png" alt="Synthetic NeRF" width="400"/>
-<img src="docs/mip-nerf360.png" alt="Mip-NeRF360" width="400"/>
-<img src="docs/tanksandtemples.png" alt="Tanks and Temples" width="400"/>
+<img src="docs/synthetic-nerf.png" alt="Synthetic NeRF" width="600"/>
+<img src="docs/mip-nerf360.png" alt="Mip-NeRF360" width="600"/>
+<img src="docs/tanksandtemples.png" alt="Tanks and Temples" width="600"/>
 
 ## Reference
 
