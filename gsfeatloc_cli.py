@@ -47,9 +47,8 @@ def main():
     parser.add_argument("--output_filename", type=str, default="results.json", help="Filename for saving results")
     parser.add_argument("--delta_rot", type=float, default=30, help="Perturbation in initial guess for rotation")
     parser.add_argument("--delta_trs", type=float, default=0.2, help="Perturbation in initial guess for translation")
-    parser.add_argument("--axis_mode", type=str, default="random", choices=["random", "x", "y", "chen-rot-trs", "chen-trs-rot", "rot-trs-chen", "trs-rot-chen"])
-    parser.add_argument("--magnitude_mode", type=str, default="fixed", choices=["fixed", "uniform", "gaussian", "chen-rot-trs", "chen-trs-rot", "rot-trs-chen", "trs-rot-chen"])
-    parser.add_argument("--sdgs_path", type=str, default=None, help="Path to the 6DGS results")
+    parser.add_argument("--axis_mode", type=str, default="random", choices=["random", "x", "y"])
+    parser.add_argument("--magnitude_mode", type=str, default="fixed", choices=["fixed", "uniform", "gaussian"])
 
     # Parse arguments before setting defaults
     args = parser.parse_args()
@@ -93,137 +92,116 @@ def main():
     
     else:
         raise FileNotFoundError(f"No test data found in {args.scene_path}. Please provide a valid path to the dataset.")
-    
-    # Load the 6DGS results
-    if args.sdgs_path is not None:
-        sdgs_path = Path(args.sdgs_path, "pose_test.json")
-        print(f"Using 6DGS results from {sdgs_path} ... ")
-        if not os.path.exists(sdgs_path):
-            raise FileNotFoundError(f"6DGS results not found in {args.sdgs_path}. Please provide a valid path to the dataset.")
-        with open(sdgs_path, 'r') as f:
-            sdgs_data = json.load(f)
-        # Load the 6DGS results into a dictionary
-        # The filename is the key and the camera pose (T_inW_ofC) estimated by 6DGS is the value.
-        frames_6dgs = {frame['filename']: np.array(frame['T_pred']) for frame in sdgs_data}
 
     results = []
     json_path = os.path.join(args.output_path, args.output_filename)
 
     for i, (filename, T_inW_ofC) in enumerate(frames.items()):
-        for j in range(5):  # FIXME (JONGWON): Perform 5 attempts per each test image
-            # Determine the image path format based on the dataset type
-            if "mipnerf360" in args.scene_path.lower():
-                image_path = Path(args.scene_path, "images_4", f"{filename}.JPG")
-            elif "tanksandtemples" in args.scene_path.lower():
-                image_path = Path(args.scene_path, "images_2", f"{filename}.jpg")
-            elif "blender" in args.scene_path.lower():
-                image_path = Path(args.scene_path, "test", f"{filename}.png")
-                
-            # Load the frame
-            im_query = np.array(Image.open(image_path))
+        # Determine the image path format based on the dataset type
+        if "mipnerf360" in args.scene_path.lower():
+            image_path = Path(args.scene_path, "images_4", f"{filename}.JPG")
+        elif "tanksandtemples" in args.scene_path.lower():
+            image_path = Path(args.scene_path, "images_2", f"{filename}.jpg")
+        elif "blender" in args.scene_path.lower():
+            image_path = Path(args.scene_path, "test", f"{filename}.png")
+            
+        # Load the frame
+        im_query = np.array(Image.open(image_path))
 
-            # Make sure the file is loaded correctly
-            assert im_query is not None, "Query image not loaded correctly"
+        # Make sure the file is loaded correctly
+        assert im_query is not None, "Query image not loaded correctly"
 
-            # Perturb the camera pose
-            T_inW_ofC_perturbated = perturb_SE3(T_inW_ofC, 
-                                                rotation_magnitude=args.delta_rot, translation_magnitude=args.delta_trs, 
-                                                axis_mode=args.axis_mode, magnitude_mode=args.magnitude_mode, 
-                                                rng=rng)
+        # Perturb the camera pose
+        T_inW_ofC_perturbated = perturb_SE3(T_inW_ofC, 
+                                            rotation_magnitude=args.delta_rot, translation_magnitude=args.delta_trs, 
+                                            axis_mode=args.axis_mode, magnitude_mode=args.magnitude_mode, 
+                                            rng=rng)
 
-            # If 6DGS results are provided, use them as the initial guess
-            if args.sdgs_path is not None and filename in frames_6dgs:
-                T_inW_ofC_perturbated = frames_6dgs[filename]
-                print(f"Using 6DGS results as initial guess for frame {filename}")
+        tic = time.time()
 
-            tic = time.time()
+        # Create a camera object
+        camera = new_cameras(
+            poses=T_inW_ofC_perturbated,
+            intrinsics=np.array([K[0,0], K[1,1], K[0,2], K[1,2]], dtype=np.float32),
+            image_sizes=np.array([w, h], dtype=np.int32),
+            camera_models=np.array(camera_model_to_int("pinhole"), dtype=np.int32),
+        )
+        
+        # Render the image
+        outputs = model.render(camera=camera, options={"outputs": "depth", "output_type_dtypes": {'color': 'uint8', 'depth': 'float32'}})
 
-            # Create a camera object
-            camera = new_cameras(
-                poses=T_inW_ofC_perturbated,
-                intrinsics=np.array([K[0,0], K[1,1], K[0,2], K[1,2]], dtype=np.float32),
-                image_sizes=np.array([w, h], dtype=np.int32),
-                camera_models=np.array(camera_model_to_int("pinhole"), dtype=np.int32),
+        im_reference = outputs["color"]
+        depth_reference = outputs["depth"]
+
+        # Make sure the image is rendered correctly
+        assert im_reference is not None, "Reference image not rendered correctly"
+        assert depth_reference is not None, "Reference depth not rendered correctly"
+
+        # Perform feature matching between the query image and the rendered image
+        pts_query_raw_cv, pts_reference_raw_cv, matches = do_feature_matching_SPSG(im_query, im_reference, do_visualize=False)
+        pts_query, pts_reference, pts_query_cv, pts_reference_cv = get_2d_feature_points(matches, pts_query_raw_cv, pts_reference_raw_cv)
+
+        # Check all the shapes
+        assert pts_query.shape[0] == pts_reference.shape[0], "Number of points do not match"
+        assert len(pts_query_cv) == len(pts_reference_cv) == len(matches), "Number of points do not match"
+
+        # Ensure there are enough matches for pose estimation
+        if len(matches) >= 4:
+            # Compute 3D points in the world and camera frames
+            p_inW, p_inC = compute_3d_points(
+            pts_reference, depth_reference, K, T_inW_ofC_perturbated, depth_scale=4.0
             )
             
-            # Render the image
-            outputs = model.render(camera=camera, options={"outputs": "depth", "output_type_dtypes": {'color': 'uint8', 'depth': 'float32'}})
+            # Estimate the camera pose using solvePnPRansac
+            rvec, tvec, inliers = estimate_camera_pose(
+            p_inW, pts_query, K, reprojection_error=5.0, iterations=50
+            )
 
-            im_reference = outputs["color"]
-            depth_reference = outputs["depth"]
+            if inliers is not None and len(inliers) > 0:
+                # Construct the estimated transformation matrix
+                T_inC_ofW_estimated = np.eye(4, dtype=np.float32)
+                T_inC_ofW_estimated[:3, :3] = R.from_rotvec(rvec.flatten()).as_matrix()
+                T_inC_ofW_estimated[:3, 3] = tvec.flatten()
 
-            # Make sure the image is rendered correctly
-            assert im_reference is not None, "Reference image not rendered correctly"
-            assert depth_reference is not None, "Reference depth not rendered correctly"
-
-            # Perform feature matching between the query image and the rendered image
-            pts_query_raw_cv, pts_reference_raw_cv, matches = do_feature_matching_SPSG(im_query, im_reference, do_visualize=False)
-            pts_query, pts_reference, pts_query_cv, pts_reference_cv = get_2d_feature_points(matches, pts_query_raw_cv, pts_reference_raw_cv)
-
-            # Check all the shapes
-            assert pts_query.shape[0] == pts_reference.shape[0], "Number of points do not match"
-            assert len(pts_query_cv) == len(pts_reference_cv) == len(matches), "Number of points do not match"
-
-            # Ensure there are enough matches for pose estimation
-            if len(matches) >= 4:
-                # Compute 3D points in the world and camera frames
-                p_inW, p_inC = compute_3d_points(
-                pts_reference, depth_reference, K, T_inW_ofC_perturbated, depth_scale=4.0
-                )
-                
-                # Estimate the camera pose using solvePnPRansac
-                rvec, tvec, inliers = estimate_camera_pose(
-                p_inW, pts_query, K, reprojection_error=5.0, iterations=50
-                )
-
-                if inliers is not None and len(inliers) > 0:
-                    # Construct the estimated transformation matrix
-                    T_inC_ofW_estimated = np.eye(4, dtype=np.float32)
-                    T_inC_ofW_estimated[:3, :3] = R.from_rotvec(rvec.flatten()).as_matrix()
-                    T_inC_ofW_estimated[:3, 3] = tvec.flatten()
-
-                    # Compute the inverse to get the camera-to-world transformation
-                    T_inW_ofC_estimated = np.linalg.inv(T_inC_ofW_estimated)
-                else:
-                    # Fallback to the perturbated pose if pose estimation fails
-                    print(f"Pose estimation failed for frame {filename}. Using perturbated pose.")
-                    T_inW_ofC_estimated = T_inW_ofC_perturbated
+                # Compute the inverse to get the camera-to-world transformation
+                T_inW_ofC_estimated = np.linalg.inv(T_inC_ofW_estimated)
             else:
-                print(f"Not enough matches for frame {filename}. Skipping this frame.")
+                # Fallback to the perturbated pose if pose estimation fails
+                print(f"Pose estimation failed for frame {filename}. Using perturbated pose.")
                 T_inW_ofC_estimated = T_inW_ofC_perturbated
+        else:
+            print(f"Not enough matches for frame {filename}. Skipping this frame.")
+            T_inW_ofC_estimated = T_inW_ofC_perturbated
 
 
-            toc = time.time()
+        toc = time.time()
 
-            elapsed_time = toc - tic
+        elapsed_time = toc - tic
 
-            T_gt = T_inW_ofC
-            T_init = T_inW_ofC_perturbated
-            T_pred = T_inW_ofC_estimated
+        T_gt = T_inW_ofC
+        T_init = T_inW_ofC_perturbated
+        T_pred = T_inW_ofC_estimated
 
-            rot_error, trs_error = get_world_frame_difference(T_gt, T_pred)
+        rot_error, trs_error = get_world_frame_difference(T_gt, T_pred)
 
-            print(f"Frame {filename} - Rotation error: {rot_error:.2f} degrees, Translation error: {trs_error:.2f} meters, Time: {elapsed_time:.2f} seconds")
+        print(f"Frame {filename} - Rotation error: {rot_error:.2f} degrees, Translation error: {trs_error:.2f} meters, Time: {elapsed_time:.2f} seconds")
 
-            results.append({
-                "filename": filename,
-                "T_gt": T_gt.tolist(),
-                "T_init": T_init.tolist(),
-                "T_pred": T_pred.tolist(),
-                "rotation_error": float(rot_error),
-                "translation_error": float(trs_error),
-                "seconds_per_frame": float(elapsed_time),
-                "trial": j,
-            })
+        results.append({
+            "filename": filename,
+            "T_gt": T_gt.tolist(),
+            "T_init": T_init.tolist(),
+            "T_pred": T_pred.tolist(),
+            "rotation_error": float(rot_error),
+            "translation_error": float(trs_error),
+            "seconds_per_frame": float(elapsed_time),
+            "trial": j,
+        })
 
-            # Save intermediate results to JSON after every ten frames or the last frame
-            if i % 10 == 0 or i == len(frames) - 1:
-                with open(json_path, "w") as f:
-                    json.dump(results, f, indent=4)
-                print(f"Intermediate results saved to {json_path}")
-        
-        # FIXME (JONGWON): Unindent above
-
+        # Save intermediate results to JSON after every ten frames or the last frame
+        if i % 10 == 0 or i == len(frames) - 1:
+            with open(json_path, "w") as f:
+                json.dump(results, f, indent=4)
+            print(f"Intermediate results saved to {json_path}")
     
     stack.close()
     
