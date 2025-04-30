@@ -194,7 +194,6 @@ def main():
             "rotation_error": float(rot_error),
             "translation_error": float(trs_error),
             "seconds_per_frame": float(elapsed_time),
-            "trial": j,
         })
 
         # Save intermediate results to JSON after every ten frames or the last frame
