@@ -1,7 +1,7 @@
 # GSFeatLoc: Visual Localization Using Feature Correspondence on 3D Gaussian Splatting
 
-This repository contains the source code for the paper "GSFeatLoc: Visual Localization Using Feature Correspondence on 3D Gaussian Splatting".
-All source code in this repository is licensed under the BSD 3-Clause License.
+This repository contains the source code for the paper **"GSFeatLoc: Visual Localization Using Feature Correspondence on 3D Gaussian Splatting"**.
+All source code in this repository is licensed under the BSD 3-Clause.
 
 Author: Jongwon Lee (jongwon5@illinois.edu)
 
@@ -13,7 +13,7 @@ We present a method for localizing a query image with respect to a precomputed 3
 - Second, it establishes 2D-2D correspondences between the query image and this synthetic image. 
 - Third, it uses the depth map to lift the 2D-2D correspondences to 2D-3D correspondences and solves a perspective-n-point (PnP) problem to produce a final pose estimate.
 
-Our method significantly reduces both inference time (from **>10s** to **~0.1s**) and estimation error compared to baseline methods that use photometric loss minimization.
+Our method significantly reduces both inference time (**from >10s to ~0.1s**) and estimation error compared to baseline methods that use photometric loss minimization.
 
 The figure below shows an overview of the proposed pipeline for visual localization using 3D Gaussian Splatting (3DGS) as the scene representation, given a query image Iq, an initial pose estimate T⁰ ∈ SE(3), and the 3DGS scene representation.
 
@@ -149,6 +149,9 @@ The images below show examples of success cases from our method on several scene
 Each triplet shows, from left to right, the query image, the image rendered at the initial pose provided by 6DGS, and the image rendered at the pose estimated by our method.
 Our method shows success cases despite drastic appearance differences between the query and the rendered image.
 
+<img src="docs/synthetic-nerf.png" alt="Synthetic NeRF" width="400"/>
+<img src="docs/mip-nerf360.png" alt="Mip-NeRF360" width="400"/>
+<img src="docs/tanksandtemples.png" alt="Tanks and Temples" width="400"/>
 
 ## Reference
 
