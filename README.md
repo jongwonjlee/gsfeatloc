@@ -1,9 +1,9 @@
 # GSFeatLoc: Visual Localization Using Feature Correspondence on 3D Gaussian Splatting
 
-This repository contains the source code for the paper **"GSFeatLoc: Visual Localization Using Feature Correspondence on 3D Gaussian Splatting"**.
+This repository contains the source code for the paper **"GSFeatLoc: Visual Localization Using Feature Correspondence on 3D Gaussian Splatting"**, implemented in only about 1,000 lines of code. 
 All source code in this repository is licensed under the BSD 3-Clause.
 
-Author: Jongwon Lee (jongwon5@illinois.edu)
+Author: Jongwon Lee ([jongwon5@illinois.edu](mailto:jongwon5@illinois.edu))
 
 ## Overview
 
