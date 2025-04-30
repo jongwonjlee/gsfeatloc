@@ -15,57 +15,57 @@ export CUDA_VISIBLE_DEVICES=0
 
 # Function to process datasets
 run_gsfeatloc() {
-    local scene_path=$1
+    local dataset_path=$1
     local model_path=$2
     local output_path=$3
-    local seq=$4
+    local scene=$4
     local rot=$5
     local trs=$6
 
-    # Check if $scene_path/$seq exists
-    if [ ! -d "$scene_path/$seq" ]; then
-        echo "Error: Scene path $scene_path/$seq does not exist."
+    # Check if $dataset_path/$scene exists
+    if [ ! -d "$dataset_path/$scene" ]; then
+        echo "Error: Scene path $dataset_path/$scene does not exist."
         return 1
     fi
 
-    # Check if $model_path/$seq exists
-    if [ ! -d "$model_path/$seq" ]; then
-        echo "Error: Model path $model_path/$seq does not exist."
+    # Check if $model_path/$scene exists
+    if [ ! -d "$model_path/$scene" ]; then
+        echo "Error: Model path $model_path/$scene does not exist."
         return 1
     fi
 
-    echo "Running GSFeatLoc for scene: $seq"
+    echo "Running GSFeatLoc for scene: $scene"
     # echo "Applying perturbations: Rotation = $rot degrees, Translation = $trs meters"
 
     # Create the output directory if it does not exist
-    echo "Output directory: $output_path/$seq"
-    mkdir -p "$output_path/$seq"
+    echo "Output directory: $output_path/$scene"
+    mkdir -p "$output_path/$scene"
 
     # Run the GSFeatLoc CLI for each combination of rotation and translation
     echo "python ../gsfeatloc_cli.py \
-        --scene_path $scene_path/$seq \
-        --model_path $model_path/$seq/checkpoint-30000 \
-        --output_path $output_path/$seq \
+        --scene_path $dataset_path/$scene \
+        --model_path $model_path/$scene/checkpoint-30000 \
+        --output_path $output_path/$scene \
         --output_filename results.json \
         --delta_rot $rot \
         --delta_trs $trs \
         --axis_mode 'random' \
-        --magnitude_mode 'gaussian' | tee $output_path/$seq/results.log"
+        --magnitude_mode 'gaussian' | tee $output_path/$scene/results.log"
 
     # Comment out the following line to prevent actual execution
     python ../gsfeatloc_cli.py \
-        --scene_path $scene_path/$seq \
-        --model_path $model_path/$seq/checkpoint-30000 \
-        --output_path $output_path/$seq \
+        --scene_path $dataset_path/$scene \
+        --model_path $model_path/$scene/checkpoint-30000 \
+        --output_path $output_path/$scene \
         --output_filename results.json \
         --delta_rot $rot \
         --delta_trs $trs \
         --axis_mode 'random' \
-        --magnitude_mode 'gaussian' | tee $output_path/$seq/results.log
+        --magnitude_mode 'gaussian' | tee $output_path/$scene/results.log
 }
 
-# Define datasets and their sequences with corresponding delta_rot and delta_trs values
-declare -A blender_sequences=(
+# Define datasets and their scenes with corresponding delta_rot and delta_trs values
+declare -A blender_scenes=(
     ["chair"]="12.10 0.87"
     ["drums"]="12.10 0.87"
     ["ficus"]="12.10 0.87"
@@ -76,7 +76,7 @@ declare -A blender_sequences=(
     ["ship"]="12.10 0.87"
 )
 
-declare -A mipnerf360_sequences=(
+declare -A mipnerf360_scenes=(
     ["bicycle"]="15.04 1.20"
     ["bonsai"]="14.26 1.13"
     ["counter"]="14.32 1.15"
@@ -88,7 +88,7 @@ declare -A mipnerf360_sequences=(
     ["treehill"]="16.11 1.32"
 )
 
-declare -A tanksandtemples_sequences=(
+declare -A tanksandtemples_scenes=(
     ["auditorium"]="19.43 2.07"
     ["barn"]="19.39 1.74"
     ["church"]="19.41 2.30"
@@ -112,16 +112,16 @@ declare -A tanksandtemples_sequences=(
     ["train"]="19.43 2.04"
 )
 
-# Function to run gsfeatloc for all sequences in a dataset
+# Function to run gsfeatloc for all scenes in a dataset
 run_dataset() {
-    local scene_path=$1
+    local dataset_path=$1
     local model_path=$2
     local output_path=$3
-    declare -n sequences=$4
+    declare -n scenes=$4
 
-    for seq in "${!sequences[@]}"; do
-        read rot trs <<< "${sequences[$seq]}"
-        run_gsfeatloc "$scene_path" "$model_path" "$output_path" "$seq" "$rot" "$trs"
+    for seq in "${!scenes[@]}"; do
+        read rot trs <<< "${scenes[$scene]}"
+        run_gsfeatloc "$dataset_path" "$model_path" "$output_path" "$scene" "$rot" "$trs"
         # break
     done
 }
@@ -130,16 +130,16 @@ run_dataset() {
 run_dataset "/home/jongwonlee/datasets/nerfbaselines/blender" \
             "/home/jongwonlee/models/gsplat/blender" \
             "/home/jongwonlee/output/gsfeatloc/blender" \
-            blender_sequences
+            blender_scenes
 
 # Run for MipNeRF360 dataset
 run_dataset "/home/jongwonlee/datasets/nerfbaselines/mipnerf360" \
             "/home/jongwonlee/models/gsplat/mipnerf360" \
             "/home/jongwonlee/output/gsfeatloc/mipnerf360" \
-            mipnerf360_sequences
+            mipnerf360_scenes
 
 # # Run for Tanks and Temples dataset
 run_dataset "/home/jongwonlee/datasets/nerfbaselines/tanksandtemples" \
             "/home/jongwonlee/models/gsplat/tanksandtemples" \
             "/home/jongwonlee/output/gsfeatloc/tanksandtemples" \
-            tanksandtemples_sequences
+            tanksandtemples_scenes
