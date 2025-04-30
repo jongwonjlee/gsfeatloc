@@ -17,15 +17,16 @@ Our method significantly reduces both inference time (**from >10s to ~0.1s**) an
 
 The figure below shows an overview of the proposed pipeline for visual localization using 3D Gaussian Splatting (3DGS) as the scene representation, given a query image Iq, an initial pose estimate T⁰ ∈ SE(3), and the 3DGS scene representation.
 
-![here](docs/diagram.jpg)
+<img src="docs/diagram.jpg" alt="Diagram" width="800"/>
 
 The figure below shows (from left to right) the query image, an image rendered at a rough initial pose, an image rendered at the estimated pose, and a blended result of the query image and the rendered image at the estimated pose.
 
+<img src="docs/results_lego.png" alt="results-lego" width="800"/>
 ![here](docs/results_lego.png)
 
 This is enabled by establishing 2D-2D feature correspondences between the query image and the image rendered at the initial pose, as shown below. 
 
-![here](docs/feature_matching_lego.png)
+<img src="docs/feature_matching_lego.png" alt="feature-matching-lego" width="400"/>
 
 ## How to run
 
