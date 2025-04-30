@@ -16,12 +16,15 @@ We present a method for localizing a query image with respect to a precomputed 3
 Our method significantly reduces both inference time (from **>10s** to **~0.1s**) and estimation error compared to baseline methods that use photometric loss minimization.
 
 The figure below shows an overview of the proposed pipeline for visual localization using 3D Gaussian Splatting (3DGS) as the scene representation, given a query image Iq, an initial pose estimate T⁰ ∈ SE(3), and the 3DGS scene representation.
+
 ![here](docs/diagram.jpg)
 
 The figure below shows (from left to right) the query image, an image rendered at a rough initial pose, an image rendered at the estimated pose, and a blended result of the query image and the rendered image at the estimated pose.
+
 ![here](docs/results_lego.png)
 
 This is enabled by establishing 2D-2D feature correspondences between the query image and the image rendered at the initial pose, as shown below. 
+
 ![here](docs/feature_matching_lego.png)
 
 ## How to run
@@ -79,25 +82,66 @@ The evaluation was conducted on open-source datasets commonly used for scene rec
 
 ### Comparison under randomized initial poses
 
-The table below shows the aggregated results of our method and baseline methods across three datasets with a randomized initial pose. Every three columns correspond to one dataset.
-| Dataset |**Synthetic-NeRF**|||**Mip-NeRF360**|||**Tanks and Temples**|||
-|:---------------------:|:----------:|:----------:|:------------:|:----------:|:----------:|:------------:|:----------:|:----------:|:------------:|
-|| **piNeRF** | **iComMa** | **Proposed** | **piNeRF** | **iComMa** | **Proposed** | **piNeRF** | **iComMa** | **Proposed** |
-| **mRE (°)**           | 3.08       | 13.29      | **1.61**         | 14.36      | 2.67       | **1.63**         | 21.27      | 31.71      | **11.10**        |
-| **mTE (unitless)**    | 0.05       | 0.20       | **0.03**         | 0.25       | **0.04**       | **0.04**         | 0.27       | 0.38       | **0.20**         |
-| **RE<5° TE<0.05 (%)** | 71.88      | 79.00      | **90.94**        | 1.22       | 86.99      | **90.65**        | 6.89       | 32.45      | **42.42**        |
-| **Time / Image (s)**  | 13.56      | 16.74      | **0.09**         | 13.46      | 27.78      | **0.15**         | 14.59      | 41.79      | **0.10**         |
+The tables below show the aggregated results of our method and baseline methods on three datasets.
+
+#### Synthetic NeRF (8 scenes, 1600 test images)
+
+|                       | **piNeRF** | **iComMa** | **Proposed**     |
+|-----------------------|:----------:|:----------:|:----------------:|
+| **mRE (°)**           | 3.08       | 13.29      | **1.61**         |
+| **mTE (unitless)**    | 0.05       | 0.20       | **0.03**         |
+| **RE<5° TE<0.05 (%)** | 71.88      | 79.00      | **90.94**        |
+| **Time / Image (s)**  | 13.56      | 16.74      | **0.09**         |
+
+#### Mip-NeRF360 (9 scenes, 221 test images)
+
+|                       | **piNeRF** | **iComMa** | **Proposed**     |
+|-----------------------|:----------:|:----------:|:----------------:|
+| **mRE (°)**           | 14.36      | 2.67       | **1.63**         |
+| **mTE (unitless)**    | 0.25       | **0.04**   | **0.04**         |
+| **RE<5° TE<0.05 (%)** | 1.22       | 86.99      | **90.65**        |
+| **Time / Image (s)**  | 13.46      | 27.78      | **0.15**         |
+
+#### Tanks and Temples (21 scenes, 943 test images)
+
+|                       | **piNeRF** | **iComMa** | **Proposed**     |
+|-----------------------|:----------:|:----------:|:----------------:|
+| **mRE (°)**           | 21.27      | 31.71      | **11.10**        |
+| **mTE (unitless)**    | 0.27       | 0.38       | **0.20**         |
+| **RE<5° TE<0.05 (%)** | 6.89       | 32.45      | **42.42**        |
+| **Time / Image (s)**  | 14.59      | 41.79      | **0.10**         |
 
 ### Comparison under initial poses provided by 6DGS
 
-The table below shows the aggregated results of our method and baseline methods across three datasets with an initial pose provided by [6DGS](https://github.com/mbortolon97/6dgs). Every four columns correspond to one dataset; the original 6DGS results are included as a reference in the leftmost subcolumn of each dataset column.
-|                   	| **Synthetic NeRF**				  |||| **Mip-NeRF360**		    		      |||| **Tanks and Temples**				  ||||
-|:---------------------:|:--------:|:----------:|:----------:|:------------:|:--------:|:----------:|:----------:|:------------:|:--------:|:----------:|:----------:|:------------:|
-|	                | **6DGS** | **piNeRF** | **iComMa** | **Proposed** | **6DGS** | **piNeRF** | **iComMa** | **Proposed** | **6DGS** | **piNeRF** | **iComMa** | **Proposed** |
-| **mRE (°)**           | 17.93    | 23.69      | 35.61      | **14.09**        | 20.84    | 17.04      | 9.60       | **6.47**         | 17.93    | 27.96      | 35.69      | **11.21**        |
-| **mTE (unitless)**    | 0.59     | 0.52       | 0.51       | **0.27**         | 0.22     | 0.28       | 0.11       | **0.05**         | 0.59     | 0.23       | 0.39       | **0.08**         |
-| **RE<5° TE<0.05 (%)** | 0.06     | 10.44      | 44.25      | **61.25**        | 0.41     | 2.44       | 78.46      | **90.24**        | 0.06     | 8.91       | 31.60      | **72.53**        |
-| **Time / Image (s)**  | 0.04     | 14.62      | 29.92      | **0.09**         | 0.02     | 14.18      | 30.65      | **0.15**         | 0.04     | 14.88      | 45.68      | **0.11**         |
+The tables below shows the aggregated results of our method and baseline methods on three datasets with an initial pose provided by [6DGS](https://github.com/mbortolon97/6dgs). The original 6DGS results are included as a reference in the leftmost column.
+
+#### Synthetic NeRF (8 scenes, 1600 test images)
+
+|                       | **6DGS**   | **piNeRF** | **iComMa** | **Proposed** |
+|-----------------------|:----------:|:----------:|:----------:|:------------:|
+| **mRE (°)**           | 17.93      | 23.69      | 35.61      | **14.09**    |
+| **mTE (unitless)**    | 0.59       | 0.52       | 0.51       | **0.27**     |
+| **RE<5° TE<0.05 (%)** | 0.06       | 10.44      | 44.25      | **61.25**    |
+| **Time / Image (s)**  | 0.04       | 14.62      | 29.92      | **0.09**     |
+
+#### Mip-NeRF360 (9 scenes, 221 test images)
+
+|                       | **6DGS**   | **piNeRF** | **iComMa** | **Proposed** |
+|-----------------------|:----------:|:----------:|:----------:|:------------:|
+| **mRE (°)**           | 20.84      | 17.04      | 9.60       | **6.47**     |
+| **mTE (unitless)**    | 0.22       | 0.28       | 0.11       | **0.05**     |
+| **RE<5° TE<0.05 (%)** | 0.41       | 2.44       | 78.46      | **90.24**    |
+| **Time / Image (s)**  | 0.02       | 14.18      | 30.65      | **0.15**     |
+
+#### Tanks and Temples (21 scenes, 943 test images)
+
+|                       | **6DGS**   | **piNeRF** | **iComMa** | **Proposed** |
+|-----------------------|:----------:|:----------:|:----------:|:------------:|
+| **mRE (°)**           | 17.93      | 27.96      | 35.69      | **11.21**    |
+| **mTE (unitless)**    | 0.59       | 0.23       | 0.39       | **0.08**     |
+| **RE<5° TE<0.05 (%)** | 0.06       | 8.91       | 31.60      | **72.53**    |
+| **Time / Image (s)**  | 0.04       | 14.88      | 45.68      | **0.11**     |
+
 
 ### Example success chases under challenging initial pose estimate causing drastic appearance differences between the query and the rendered image
 
