@@ -157,7 +157,7 @@ Our method shows success cases despite drastic appearance differences between th
 
 If you use any part or all of this project or its code, please acknowledge and cite the following reference:
 ```
-@misc{lee2025gsfeatlocvisuallocalizationusing,
+@misc{lee2025gsfeatloc,
       title={GSFeatLoc: Visual Localization Using Feature Correspondence on 3D Gaussian Splatting}, 
       author={Jongwon Lee and Timothy Bretl},
       year={2025},
